@@ -1,33 +1,33 @@
 package pl.coderslab.entity;
 
 public class User {
-
     private int id;
-    private String userName;
     private String email;
+    private String userName;
     private String password;
-
-
-
-    public User(String userName, String email, String password) {
-        this.userName = userName;
+    
+    public User(String email, String userName, String password) {
         this.email = email;
+        this.userName = userName;
         this.password = password;
     }
 
-    public User(int id, String userName, String email, String password) {
+    public User(int id, String email, String userName, String password) {
         this.id = id;
-        this.userName = userName;
         this.email = email;
+        this.userName = userName;
         this.password = password;
+    }
+
+   public User() {
     }
 
     @Override
     public String toString() {
         return "User{" +
                 "id=" + id +
-                ", userName='" + userName + '\'' +
                 ", email='" + email + '\'' +
+                ", userName='" + userName + '\'' +
                 ", password='" + password + '\'' +
                 '}';
     }

@@ -1,7 +1,9 @@
 package pl.coderslab.entity;
 
 import org.springframework.security.crypto.bcrypt.BCrypt;
+
 import java.sql.*;
+import java.util.Arrays;
 
 public class UserDao {
 
@@ -15,11 +17,10 @@ public class UserDao {
     public User create(User user) {
         try (Connection conn = DbUtil.getConnection()) {
             PreparedStatement statement = conn.prepareStatement(CREATE_USER, Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1, user.getUserName());
-            statement.setString(2, user.getEmail());
+            statement.setString(1, user.getEmail());
+            statement.setString(2, user.getUserName());
             statement.setString(3, hashPassword(user.getPassword()));
             statement.executeUpdate();
-
             ResultSet resultSet = statement.getGeneratedKeys();
             if (resultSet.next()) {
                 user.setId(resultSet.getInt(1));
@@ -32,45 +33,39 @@ public class UserDao {
     }
 
     public User read(int userId) {
-        try (Connection conn = DbUtil.getConnection();
-             PreparedStatement statement = conn.prepareStatement(SELECT_USER);
-        ) {
-            User userFromDb = new User("null", "null", "null");
-
+        try (Connection conn = DbUtil.getConnection()) {
+            PreparedStatement statement = conn.prepareStatement(SELECT_USER);
             statement.setInt(1, userId);
-            ResultSet rs = statement.executeQuery();
-            if (rs.next()) {
-                userFromDb.setId(rs.getInt("id"));
-                userFromDb.setEmail(rs.getString("email"));
-                userFromDb.setUserName(rs.getString("userName"));
-                userFromDb.setPassword(rs.getString("password"));
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                User user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setEmail(resultSet.getString("email"));
+                user.setUserName(resultSet.getString("userName"));
+                user.setPassword(resultSet.getString("password"));
+                return user;
             }
-            return userFromDb;
         } catch(SQLException e) {
             e.printStackTrace();
-            return null;
-        }
+        } return null;
     }
-   public void update(User user) {
-        try (Connection conn = DbUtil.getConnection()) {
-            PreparedStatement statement = conn.prepareStatement(UPDATE_USER, Statement.RETURN_GENERATED_KEYS);
-            statement.setInt(1,user.getId());
-            statement.executeUpdate();
 
+
+    public void update(User user) {
+        try (Connection conn = DbUtil.getConnection()) {
+            PreparedStatement statement = conn.prepareStatement(UPDATE_USER,  Statement.RETURN_GENERATED_KEYS);
             ResultSet resultSet = statement.getGeneratedKeys();
             if (resultSet.next()) {
-               // statement.setInt(1, user.getId());
+                statement.setString(1, user.getEmail());
                 statement.setString(2, user.getUserName());
-                statement.setString(3, user.getEmail());
-                statement.setString(4, hashPassword(user.getPassword()));
+                statement.setString(3, this.hashPassword(user.getPassword()));
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
-
+    
 
     public void delete(int userId) {
         try (Connection conn = DbUtil.getConnection()) {
@@ -83,6 +78,35 @@ public class UserDao {
     }
 
 
+    public User[] findAll() {
+
+        try (Connection conn = DbUtil.getConnection()) {
+
+            User[] users = new User[0];
+            PreparedStatement statement = conn.prepareStatement(SELECT_ALL_USERS);
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                User user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setEmail(resultSet.getString("email"));
+                user.setUserName(resultSet.getString("userName"));
+                user.setPassword(resultSet.getString("password"));
+                users = addToArray(user, users);
+            }
+            return users;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private User[] addToArray(User u, User[] users) {
+        User[] tmpUsers = Arrays.copyOf(users, users.length + 1); // Tworzymy kopię tablicy powiększoną o 1.
+        tmpUsers[users.length] = u; // Dodajemy obiekt na ostatniej pozycji.
+        return tmpUsers; // Zwracamy nową tablicę.
+    }
+
+    
     public String hashPassword(String password) {
         return BCrypt.hashpw(password, BCrypt.gensalt());
     }
